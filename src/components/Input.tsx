@@ -17,7 +17,8 @@ export function Input({
       _focus={{
         bg: "gray.700",
         borderWidth: 1,
-        borderColor: "green.500"
+        borderColor: "green.500",
+        ...rest._focus
       }}
       {...rest}
     />

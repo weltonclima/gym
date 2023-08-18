@@ -2,9 +2,11 @@ import { Roboto_400Regular, Roboto_700Bold, useFonts } from '@expo-google-fonts/
 import React from 'react';
 import { StatusBar } from 'react-native';
 import { Loading } from './src/components/Loading';
-import { SignUp } from './src/screens/SignUp';
 import { theme } from './src/styles/theme';
 import { NativeBaseProvider } from './src/utils/NativeBaseProvider';
+
+import { Routes } from '@routes/index.routes';
+import 'react-native-gesture-handler';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -18,7 +20,7 @@ export default function App() {
         backgroundColor='transparent'
         translucent
       />
-      {!fontsLoaded ? <Loading /> : <SignUp />}
+      {!fontsLoaded ? <Loading /> : <Routes />}
     </NativeBaseProvider>
   );
 }
