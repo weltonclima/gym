@@ -35,7 +35,7 @@ export function SignIn() {
       if (!!data?.user) {
         handleSignIn(data);
         const decode = jwtDecode<{ exp: number }>(data.token);
-        console.log("decode", new Date(decode.exp * 1000), new Date())
+        //console.log("decode", new Date(decode.exp * 1000), new Date())
       }
 
     } catch (error) {

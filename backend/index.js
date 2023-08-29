@@ -2,10 +2,10 @@ require("express-async-errors");
 
 const path = require("path");
 
-const swaggerDocument = require("./docs/swagger.json");
+const swaggerDocument = require("./src/docs/swagger.json");
 const swaggerUI = require("swagger-ui-express");
-const uploadConfig = require("./configs/upload");
-const AppError = require("./utils/AppError");
+const uploadConfig = require("./src/configs/upload");
+const AppError = require("./src/utils/AppError");
 const express = require("express");
 const cors = require("cors");
 
@@ -20,7 +20,7 @@ const thumbExercisesPath = path.resolve(__dirname, "..", "exercises", "thumb")
 app.use("/exercise/thumb", express.static(thumbExercisesPath));
 
 
-const routes = require("./routes");
+const routes = require("./src/routes");
 
 app.use(express.json());
 app.use(cors());

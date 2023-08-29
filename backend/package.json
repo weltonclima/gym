@@ -4,8 +4,8 @@
   "description": "API desenvolvida para ser utilizada no módulo de consumo de API na trilha de React Native do Ignite.",
   "main": "index.js",
   "scripts": {
-    "start": "node ./src/server.js",
-    "dev": "nodemon ./src/server.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "migrate": "knex migrate:latest",
     "seed": "knex seed:run"
   },

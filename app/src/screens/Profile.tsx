@@ -125,7 +125,7 @@ export function Profile() {
           "Content-Type": "multipart/form-data",
         }
       });
-      console.log({ data, status });
+
       if (status >= 200 && status < 400) {
         await handleUpdateUser(!!user ? { ...user, avatar: data.avatar } : null);
         toast.show({

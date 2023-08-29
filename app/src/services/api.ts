@@ -3,6 +3,7 @@ import axios from "axios";
 export function setupApi() {
   const api = axios.create({
     baseURL: "http://192.168.5.38:3333"
+    //baseURL: "https://gym-tau-one.vercel.app:3333"
   })
 
   api.interceptors.response.use(response => response, error => {
