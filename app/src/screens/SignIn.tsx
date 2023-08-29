@@ -3,11 +3,14 @@ import LogoSvg from '@assets/logo.svg';
 import { Button } from '@components/Button';
 import { FormInput } from '@components/forms/FormInput';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useAuth } from '@hooks/useAuth';
 import { useNavigation } from '@react-navigation/native';
 import { IAuthRoutesProps } from '@routes/auth.routes';
-import { Center, Image, ScrollView, Text, VStack } from 'native-base';
+import { api } from '@services/api';
+import jwtDecode from "jwt-decode";
+import { Center, Image, ScrollView, Text, VStack, useToast } from 'native-base';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { ISignIn } from 'src/interfaces/ISignIn';
+import { IFormSignIn, ISignIn } from 'src/interfaces/ISignIn';
 import * as yup from "yup";
 
 const schema = yup.object().shape({
@@ -18,13 +21,31 @@ const schema = yup.object().shape({
 export function SignIn() {
 
   const navigation = useNavigation<IAuthRoutesProps>();
+  const { handleSignIn } = useAuth();
+  const toast = useToast();
 
-  const { control, handleSubmit, formState, } = useForm<ISignIn>({
+  const { control, handleSubmit, formState } = useForm<IFormSignIn>({
     resolver: yupResolver(schema)
   });
 
-  const onSubmitHandler: SubmitHandler<ISignIn> = (event) => {
-    console.log(event)
+  const onSubmitHandler: SubmitHandler<IFormSignIn> = async (event) => {
+    try {
+      const { data } = await api.post<ISignIn>("sessions", event)
+
+      if (!!data?.user) {
+        handleSignIn(data);
+        const decode = jwtDecode<{ exp: number }>(data.token);
+        console.log("decode", new Date(decode.exp * 1000), new Date())
+      }
+
+    } catch (error) {
+      toast.show({
+        title: error instanceof Error
+          ? error.message
+          : "Não foi possível entrar. Tente novamente mais tarde.",
+        bg: "red.500", placement: "top"
+      });
+    }
   }
 
   return (
@@ -65,7 +86,10 @@ export function SignIn() {
             onSubmitEditing={handleSubmit(onSubmitHandler)}
             returnKeyType="send"
           />
-          <Button mt={8} onPress={handleSubmit(onSubmitHandler)}>
+          <Button mt={8}
+            isLoading={formState.isSubmitting}
+            onPress={handleSubmit(onSubmitHandler)}
+          >
             Acessar
           </Button>
         </Center>

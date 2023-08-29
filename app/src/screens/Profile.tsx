@@ -1,18 +1,93 @@
+import userPhotoDefault from "@assets/userPhotoDefault.png";
 import { Button } from "@components/Button";
 import { Header } from "@components/Header";
-import { Input } from "@components/Input";
 import { UserPhoto } from "@components/UserPhoto";
+import { FormInput } from "@components/forms/FormInput";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useAuth } from "@hooks/useAuth";
+import { api } from "@services/api";
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { Center, Heading, ScrollView, Skeleton, VStack, useToast } from "native-base";
 import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { TouchableOpacity } from "react-native";
+import { INewPassord } from "src/interfaces/INewPassord";
+import { IUser } from "src/interfaces/IUser";
+import * as yup from "yup";
+
+const schema = yup.object().shape({
+  name: yup.string().required("informe o nome"),
+
+  old_password: yup.string().notRequired()
+    .when("password", {
+      is: (value: string) => !!value,
+      then: schema => schema.required("informe a senha antiga"),
+      otherwise: schema => schema.when("confirm_password", {
+        is: (value: string) => !!value,
+        then: schema => schema.required("informe a senha antiga"),
+        otherwise: schema => schema.nullable().transform(value => !!value ? value : null)
+      })
+    }),
+
+  password: yup.string().when("old_password", {
+    is: (value: string) => !!value,
+    then: schema => schema.required("informe a nova senha").min(6, "A nova senha deve ter pelo menos seis dígitos"),
+    otherwise: schema => schema.nullable().transform(value => !!value ? value : null)
+  }),
+
+  confirm_password: yup.string().when("password", {
+    is: (value: string) => !!value,
+    then: schema => schema.oneOf([yup.ref("password")], "As novas senhas não coincidem"),
+    otherwise: schema => schema.nullable().transform(value => !!value ? value : null)
+  })
+
+}, [
+  ["old_password", "password"],
+  ["password", "old_password"],
+  ["confirm_password", "password"],
+]);
 
 export function Profile() {
   const [loading, setLoading] = useState(false);
-  const [userPhoto, setUserPhoto] = useState("https://github.com/weltonclima.png");
 
   const toast = useToast();
+  const { user, handleUpdateUser } = useAuth();
+
+  const { control, handleSubmit, formState } = useForm<INewPassord>({
+    resolver: yupResolver<any>(schema),
+    defaultValues: {
+      name: user?.name,
+      email: user?.email,
+
+    }
+  });
+
+  const onSubmitHandler: SubmitHandler<INewPassord> = async (event) => {
+    try {
+      const { status } = await api.put("users", {
+        name: event.name,
+        old_password: event.old_password,
+        password: event.password
+      });
+
+      if (status >= 200 && status < 400) {
+        await handleUpdateUser(!!user ? { ...user, name: event.name } : null);
+        toast.show({
+          title: "Parabéns! Perfil alterado com sucesso.",
+          bg: "green.700", placement: "top"
+        });
+      }
+
+    } catch (error) {
+      toast.show({
+        title: error instanceof Error
+          ? error.message
+          : "Não foi possível alterar o perfil. Tente novamente mais tarde.",
+        bg: "red.500", placement: "top"
+      });
+    }
+  }
 
   const handleImage = async () => {
     try {
@@ -32,14 +107,41 @@ export function Profile() {
       if (!!isValidPhoto.size && (isValidPhoto.size / 1024 / 1024) > 1)
         return toast.show({
           title: "Essa imagem é muito grande. Escolha uma de até 5MB.",
-          placement:"top",
-          bg:"red.500",
-        })
+          placement: "top",
+          bg: "red.500",
+        });
 
-      setUserPhoto(photo.assets?.[0].uri);
+      const fileExtension = photo.assets[0].uri.split(".").pop();
+
+      const form = new FormData();
+      form.append("avatar", {
+        name: `${user?.name}.${fileExtension}`.toLowerCase(),
+        uri: photo.assets[0].uri,
+        type: `${photo.assets[0].type}/${fileExtension}`
+      } as any);
+
+      const { data, status } = await api.patch<IUser>("users/avatar", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }
+      });
+      console.log({ data, status });
+      if (status >= 200 && status < 400) {
+        await handleUpdateUser(!!user ? { ...user, avatar: data.avatar } : null);
+        toast.show({
+          title: "Parabéns! Foto do perfil alterada com sucesso.",
+          bg: "green.700", placement: "top"
+        });
+      }
+
 
     } catch (error) {
-      console.log(error)
+      toast.show({
+        title: error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a foto do perfil. Tente novamente mais tarde.",
+        bg: "red.500", placement: "top"
+      });
     } finally {
       setLoading(false);
     }
@@ -61,7 +163,7 @@ export function Profile() {
             />
             :
             <UserPhoto
-              source={{ uri: userPhoto }}
+              source={!!user?.avatar ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` } : userPhotoDefault}
               alt="Photo user"
               size={33}
             />
@@ -75,36 +177,48 @@ export function Profile() {
           </TouchableOpacity>
         </Center>
         <VStack px={10} mt={5}>
-          <Input
+          <FormInput
+            name="name"
             placeholder="Nome"
             bg="gray.600"
-            value="Welton Lima"
+            control={control}
           />
-          <Input
+          <FormInput
+            name="email"
             placeholder="E-mail"
             bg="gray.500"
-            value="welton.c.lima@gmail.com"
+            control={control}
             isDisabled
           />
           <Heading fontSize="md" mt={12}>
             Alterar senha
           </Heading>
-          <Input
+          <FormInput
+            name="old_password"
             placeholder="Senha antiga"
             bg="gray.600"
             secureTextEntry
+            control={control}
           />
-          <Input
+          <FormInput
+            name="password"
             placeholder="Nova senha"
             bg="gray.600"
             secureTextEntry
+            control={control}
           />
-          <Input
+          <FormInput
+            name="confirm_password"
             placeholder="Confirme nova senha"
             bg="gray.600"
             secureTextEntry
+            control={control}
+            onSubmitEditing={handleSubmit(onSubmitHandler)}
           />
-          <Button mt={8} mb={9}>
+          <Button mt={8} mb={9}
+            onPress={handleSubmit(onSubmitHandler)}
+            isLoading={formState.isSubmitting}
+          >
             Atualizar
           </Button>
         </VStack>

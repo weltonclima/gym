@@ -1,13 +1,12 @@
 import { HStack, Heading, Text, VStack } from "native-base";
+import { IHistory } from "src/interfaces/IHistory";
 
 interface Props {
-  title: string;
-  subTitle: string;
-  time: string;
+  data: IHistory;
 }
-export function HistoryCard({ title, subTitle, time }: Props) {
+export function HistoryCard({ data }: Props) {
   return (
-    <HStack key={title + time} py={4} px={5} mt={3}
+    <HStack py={4} px={5} mt={3}
       bg="gray.600"
       rounded="md"
       alignItems="center"
@@ -20,14 +19,14 @@ export function HistoryCard({ title, subTitle, time }: Props) {
           lineHeight="lg"
           numberOfLines={1}
         >
-          {title}
+          {data.group}
         </Heading>
         <Text fontSize="lg" lineHeight="xl" numberOfLines={1}>
-          {subTitle}
+          {data.name}
         </Text>
       </VStack>
       <Text fontSize="md" color="gray.300">
-        {time}
+        {data.hour}
       </Text>
     </HStack>
   )

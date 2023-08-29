@@ -5,7 +5,8 @@ import { FormInput } from '@components/forms/FormInput';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigation } from '@react-navigation/native';
 import { IAuthRoutesProps } from '@routes/auth.routes';
-import { Center, Image, ScrollView, Text, VStack } from 'native-base';
+import { api } from '@services/api';
+import { Center, Image, ScrollView, Text, VStack, useToast } from 'native-base';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { ISignUp } from 'src/interfaces/ISignUp';
 import * as yup from "yup";
@@ -21,13 +22,30 @@ const schema = yup.object().shape({
 export function SignUp() {
 
   const navigation = useNavigation<IAuthRoutesProps>();
+  const toast = useToast();
 
   const { control, handleSubmit, formState, } = useForm<ISignUp>({
     resolver: yupResolver(schema)
   });
 
-  const onSubmitHandler: SubmitHandler<ISignUp> = (event) => {
-    console.log(event)
+  const onSubmitHandler: SubmitHandler<ISignUp> = async (event) => {
+    try {
+      const response = await api.post("users", {
+        name: event.name,
+        email: event.email,
+        password: event.password
+      });
+
+      await navigation.navigate("signIn");
+
+    } catch (error) {
+      toast.show({
+        title: error instanceof Error
+          ? error.message
+          : "Não foi possível criar a conta. Tente novamente mais tarde.",
+        bg: "red.500", placement: "top"
+      });
+    }
   }
 
   return (
@@ -80,7 +98,10 @@ export function SignUp() {
             onSubmitEditing={handleSubmit(onSubmitHandler)}
             returnKeyType="send"
           />
-          <Button mt={8} onPress={handleSubmit(onSubmitHandler)}>
+          <Button mt={8}
+            isLoading={formState.isSubmitting}
+            onPress={handleSubmit(onSubmitHandler)}
+          >
             Criar e acessar
           </Button>
         </Center>

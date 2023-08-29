@@ -23,7 +23,7 @@ type AppRoutesProps = {
   home: undefined;
   history: undefined;
   profile: undefined;
-  exercise: ExerciseProps
+  exercise: { id: number; }
 }
 
 export interface IAppRoutesProps extends NavigationProp<AppRoutesProps> { };
